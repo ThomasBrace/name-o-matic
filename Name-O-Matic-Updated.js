@@ -25,18 +25,19 @@ speechOutput = '';
 const handlers = {
 	'LaunchRequest': function () {
 		this.emit(':ask', welcomeOutput, welcomeReprompt);
+		this.attributes['familyName'] = "";
 	},
 	'AMAZON.HelpIntent': function () {
-		speechOutput = 'Placeholder response for AMAZON.HelpIntent.';
+		speechOutput = 'Try asking for up to ten names at a time, sepcify a either boys or girls name. You can even ask for names beginin with a certain letter';
 		reprompt = '';
 		this.emit(':ask', speechOutput, reprompt);
 	},
    'AMAZON.CancelIntent': function () {
-		speechOutput = 'Placeholder response for AMAZON.CancelIntent';
+		speechOutput = 'Ok, thanks bye.';
 		this.emit(':tell', speechOutput);
 	},
    'AMAZON.StopIntent': function () {
-		speechOutput = 'Placeholder response for AMAZON.StopIntent.';
+		speechOutput = 'Ok, thanks bye.';
 		this.emit(':tell', speechOutput);
    },
    'SessionEndedRequest': function () {
@@ -51,7 +52,7 @@ const handlers = {
 
 
 		//Your custom intent handling goes here
-		speechOutput = "This is a place holder response for the intent named AMAZON.FallbackIntent. This intent has no slots. Anything else?";
+		speechOutput = "I didn't quite get that, please try again.";
 		this.emit(":ask", speechOutput, speechOutput);
     },
 	'getNameIntent': function () {
@@ -62,25 +63,12 @@ const handlers = {
 
 
 		let sexSlot = resolveCanonical(this.event.request.intent.slots.sex);
-		console.log("____gender:"+ sexSlot);
-
 		let lengthSlot = resolveCanonical(this.event.request.intent.slots.length);
-		console.log("____length:"+ lengthSlot);
-
 		let surnameSlot = resolveCanonical(this.event.request.intent.slots.surname);
-		console.log("____surname:"+ surnameSlot);
-
 		let numberSlot = resolveCanonical(this.event.request.intent.slots.number);
-		console.log("____number:"+ numberSlot);
-
 		let letterSlot = resolveCanonical(this.event.request.intent.slots.letter);
-		console.log("____letter:"+ letterSlot);
-
 		let middleNameSlot = resolveCanonical(this.event.request.intent.slots.middleName);
-		console.log("____middleName:"+ middleNameSlot);
-
 		let firstNameSlot = resolveCanonical(this.event.request.intent.slots.firstName);
-		console.log("____firstNameSlot:"+ firstNameSlot);
 
 		//Custom intent handling goes here
 		let boysNames = ["Oliver","George","Harry","Jack","Jacob","Noah","Charlie","Muhammad","Thomas","Oscar","William","James","Henry","Leo","Alfie","Joshua","Freddie","Archie","Ethan","Isaac","Alexander","Joseph","Edward","Samuel","Max","Daniel","Arthur","Lucas","Mohammed","Logan","Theo","Harrison","Benjamin","Mason","Sebastian","Finley","Adam","Dylan","Zachary","Riley","Teddy","Theodore","David","Toby","Jake","Louie","Elijah","Reuben","Arlo","Hugo","Luca","Jaxon","Matthew","Harvey","Reggie","Michael","Harley","Jude","Albert","Tommy","Luke","Stanley","Jenson","Frankie","Jayden","Gabriel","Elliot","Mohammad","Ronnie","Charles","Louis","Elliott","Frederick","Nathan","Lewis","Blake","Rory","Ollie","Ryan","Tyler","Jackson","Dexter","Alex","Austin","Kai","Albie","Caleb","Carter","Bobby","Ezra","Ellis","Leon","Roman","Ibrahim","Aaron","Liam","Jesse","Jasper","Felix","Jamie"];
@@ -105,7 +93,9 @@ const handlers = {
 			pickArry = pickArry.filter((name) => name.startsWith(letterSlot.toUpperCase()));
 		}
 
-console.log(pickArry);
+
+		//save family name
+		this.attributes['familyName'] = surnameSlot;
 
 		//get number of names to pick
 		if (typeof numberSlot != "undefined"){
@@ -119,8 +109,6 @@ console.log(pickArry);
 				pickedIndex = Math.floor(Math.random() * pickArry.length)
 				pickedNames = pickedNames + pickArry[pickedIndex] + " " + surnameSlot + ","
 				pickArry.splice(pickedIndex,1)
-console.log(pickedNames);
-console.log(pickArry);
 			}
 
 			speechOutput = " How about these?: " + pickedNames;
@@ -133,6 +121,10 @@ console.log(pickArry);
 
 		//announce the names
 		this.emit(':ask', speechOutput, speechOutput);
+
+		//keep session open
+		this.handler.response.shouldEndSession = false;
+console.log("Session Closed:" + this.handler.response.shouldEndSession)
 	},
 	'AMAZON.PauseIntent': function () {
 		speechOutput = '';
@@ -141,7 +133,7 @@ console.log(pickArry);
 
 
 		//Your custom intent handling goes here
-		speechOutput = "This is a place holder response for the intent named AMAZON.PauseIntent. This intent has no slots. Anything else?";
+		speechOutput = "Ok, I'll wait....";
 		this.emit(":ask", speechOutput, speechOutput);
     },
 	'AMAZON.ResumeIntent': function () {
@@ -151,11 +143,11 @@ console.log(pickArry);
 
 
 		//Your custom intent handling goes here
-		speechOutput = "This is a place holder response for the intent named AMAZON.ResumeIntent. This intent has no slots. Anything else?";
+		speechOutput = "Ok, please let me know the type of name you would like me to generate";
 		this.emit(":ask", speechOutput, speechOutput);
     },
 	'Unhandled': function () {
-        speechOutput = "The skill didn't quite understand what you wanted.  Do you want to try something else?";
+        speechOutput = "So i didn't understand that, What type of name you would like me to generate";
         this.emit(':ask', speechOutput, speechOutput);
     }
 };
@@ -179,19 +171,26 @@ function resolveCanonical(slot){
     try{
 		canonical = slot.resolutions.resolutionsPerAuthority[0].values[0].value.name;
 	}catch(err){
-	    console.log(err.message);
+	    //console.log(err.message);
 	    canonical = slot.value;
 	};
 	return canonical;
 };
 
 function delegateSlotCollection(){
-  console.log("in delegateSlotCollection");
-  console.log("current dialogState: "+this.event.request.dialogState);
+console.log("in delegateSlotCollection");
+console.log("current dialogState: "+this.event.request.dialogState);
     if (this.event.request.dialogState === "STARTED") {
-      console.log("in Beginning");
+console.log(" ");
+console.log("in Beginning");
+console.log(" ");
 	  let updatedIntent= null;
-	  // updatedIntent=this.event.request.intent;
+	  updatedIntent=this.event.request.intent;
+console.log(updatedIntent)
+console.log(this.attributes['familyName'])
+
+			//updatedIntent.slots.name.value = this.attributes['familyName'];
+console.log(updatedIntent)
       //optionally pre-fill slots: update the intent object with slot values for which
       //you have defaults, then return Dialog.Delegate with this updated intent
       // in the updatedIntent property
@@ -209,9 +208,11 @@ function delegateSlotCollection(){
 		this.emit(':responseReady', updatedIntent);
 
     } else if (this.event.request.dialogState !== "COMPLETED") {
-      console.log("in not completed");
-      // return a Dialog.Delegate directive with no updatedIntent property.
-      //this.emit(":delegate"); //uncomment this is using ASK SDK 1.0.9 or newer
+      console.log("is not completed");
+console.log(Dialog.Delegate);
+			//return Dialog.Delegate;
+			// return a Dialog.Delegate directive with no updatedIntent property.
+      this.emit(":delegate"); //uncomment this is using ASK SDK 1.0.9 or newer
 
 	  //this code necessary is using ASK SDK versions prior to 1.0.9
 		if(this.isOverridden()) {
@@ -231,29 +232,6 @@ function delegateSlotCollection(){
       // so call your normal intent handler.
       return this.event.request.intent;
     }
-}
-
-
-function randomPhrase(array) {
-    // the argument is an array [] of words or phrases
-    let i = 0;
-    i = Math.floor(Math.random() * array.length);
-    return(array[i]);
-}
-function isSlotValid(request, slotName){
-        let slot = request.intent.slots[slotName];
-        //console.log("request = "+JSON.stringify(request)); //uncomment if you want to see the request
-        let slotValue;
-
-        //if we have a slot, get the text and store it into speechOutput
-        if (slot && slot.value) {
-            //we have a value in the slot
-            slotValue = slot.value.toLowerCase();
-            return slotValue;
-        } else {
-            //we didn't get a value in the slot.
-            return false;
-        }
 }
 
 //These functions are here to allow dialog directives to work with SDK versions prior to 1.0.9
