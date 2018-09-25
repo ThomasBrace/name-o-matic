@@ -21,7 +21,6 @@ let nameArr = new Array();
 let handlers = {
 	'LaunchRequest': function () {
 console.log('launch')
-console.log(this.attributes)
 console.log(this.attributes.savedNames)
  		if (Object.keys(this.attributes).length === 0) {
 			//fresh login
@@ -32,7 +31,7 @@ console.log(this.attributes.savedNames)
 		}else{
 			//retuning user
 			this.response
-				.speak("Welcome back to the name o matik generator. Your family name is currently set as " + this.attributes.familyName + " and you have " + this.attributes.savedNames.length + " saved names. Shall I generate a new name for you?")
+				.speak("Welcome back to the name o matik generator. Your family name is currently set as " + this.attributes.familyName + ", and you have " + this.attributes.savedNames.length + " saved names. Shall I generate a new name for you?")
 				.listen("Would you like a boys or a girls name?, or a name begining with a particular Letter? or revew your saved names?");
 		}
 
@@ -98,13 +97,6 @@ console.log(this.attributes.savedNames)
 		if (typeof surnameSlot != "undefined"){
 			this.attributes['familyName'] = surnameSlot;
 		}
-		// if (typeof numberSlot != "undefined"){
-		// 	this.attributes['numberSlot'] = numberSlot;
-		// 		console.log('__numberSlot:' + this.attributes['numberSlot'])
-		// }
-		if (typeof letterSlot != "undefined"){
-			this.attributes['letterSlot'] = letterSlot;
-		}
 
 		//setup pick list by gender
 		if (typeof this.attributes['sexSlot'] == "undefined"){
@@ -144,7 +136,10 @@ console.log(this.attributes.savedNames)
 			this.attributes['currentName'] = pickedName + " " + this.attributes['familyName'];
 		}
 
-		this.response.speak(speechOutput + ". should I generate another?").listen("should I generate another?");
+		this.response
+			.speak(speechOutput + ". should I generate another?")
+			.listen("should I generate another?");
+
 		this.emit(':responseReady');
 	},
 	'saveNameIntent': function () {
@@ -153,60 +148,87 @@ console.log(this.attributes.savedNames)
 		let lastNameSlot = this.event.request.intent.slots.lastName.value; // not currently used
 		let firstNameSlot = this.event.request.intent.slots.firstName.value; // not currently used
 
-		let currentName = "";
-		//Save the sessions slots if they haven't been updated in the latest requests
-		if (typeof firstNameSlot != "undefined"){
-			if (typeof lastNameSlot != "undefined"){
-				currentName = firstNameSlot + " " + lastNameSlot;
-			} else {
-				currentName = firstNameSlot + " " + this.attributes['familyName']
-			}
-			this.attributes['currentName'] = currentName;
-		} else {
-			// assume they are refering to saving most recent name.
-			currentName = this.attributes['currentName'];
-		}
+		let currentName = resloveName(firstNameSlot,lastNameSlot,this)
+
 		nameArr.push(currentName)
 		this.attributes.savedNames = nameArr;
 
-		this.response.speak("I've added " + currentName + " to your saved names").listen("should I generate name?");
+		this.response
+			.speak("I've added " + currentName + " to your saved names")
+			.listen("should I generate name?");
+
 		this.emit(':responseReady');
 	},
 	'reviewNamesIntent': function () {
-		this.response.speak("Your saved names are:" + this.attributes.savedNames).listen("Ask me to remove any names or ask me new ones?");
+		if (this.attributes.savedNames.length == 0){
+			this.response
+			.speak("you have no saved names. To add some just ask me to save any names you like the sound of. would you like me to suggest some names?")
+			.listen("should I generate name?");
+
+		} else {
+			this.response
+			.speak("Your saved names are:" + this.attributes.savedNames)
+			.listen("Ask me to remove any names or ask me new ones?");
+		}
 		this.emit(':responseReady');
 	},
 	'removeNameIntent': function () {
 
-	let firstNameSlot = this.event.request.intent.slots.firstName.value;
-	let lastNameSlot = this.event.request.intent.slots.lastName.value;
-	let currentName = "";
+		let firstNameSlot = this.event.request.intent.slots.firstName.value;
+		let lastNameSlot = this.event.request.intent.slots.lastName.value;
 
-	//Save the sessions slots if they haven't been updated in the latest requests
-	if (typeof firstNameSlot != "undefined"){
-		if (typeof lastNameSlot != "undefined"){
-			currentName = firstNameSlot + " " + lastNameSlot;
+		let currentName = resloveName(firstNameSlot,lastNameSlot,this)
+		let index = this.attributes.savedNames.indexOf(currentName)
+		//try and find name in saved names
+		if (index != -1) {
+			this.attributes.savedNames.splice(index,1)
+			this.response
+				.speak("I've removed " + currentName + " from your saved names. Would you like me to generate some new names?" )
+				.listen("should I generate name?");
 		} else {
-			currentName = firstNameSlot + " " + this.attributes['familyName']
+			this.response
+				.speak("I could not find " + currentName + " in your saved names. Would you like me to generate some new names?" )
+				.listen("should I generate name?");
 		}
-		this.attributes['currentName'] = currentName;
-	} else {
-		// assume they are refering to saving most recent name.
-		currentName = this.attributes['currentName'];
-	}
-	let index = this.attributes.savedNames.indexOf(currentName)
-	//try and find name in saved names
-	if (index != -1) {
-		this.attributes.savedNames.splice(index,1)
-		this.response.speak("I've removed " + currentName + " from your saved names. Would you like me to generate some new names?" ).listen("should I generate name?");
-	} else {
-		this.response.speak("I could not find " + currentName + " in your saved names. Would you like me to generate some new names?" ).listen("should I generate name?");
-	}
 
+		this.emit(':responseReady');
+	},
+	'emptySavedNamesIntent' : function () {
+console.log(this.attributes.savedNames)
+		this.attributes.savedNames = [];
+		this.response
+			.speak("I have emptyed your saved names. Would you like me to generate some new names?" )
+			.listen("should I generate name?")
+
+		this.emit(':responseReady');
+	},
+	'changeFamilyNameIntent' : function () {
+
+		let surnameSlot = this.event.request.intent.slots.surname.value;
+
+		if (typeof surnameSlot != "undefined"){
+			this.attributes['familyName'] = surnameSlot;
+		}
+
+		this.response
+			.speak("I have updated you family name to " + this.attributes['familyName'] + ". Would you like me to generate some new names?" )
+			.listen("should I generate name?")
 
 		this.emit(':responseReady');
 	}
 };
+
+function resloveName(first,last,_this){
+	let current = ""
+	if (typeof first != "undefined" && typeof last != "undefined"){
+		current = first + " " + last;
+	} else if (typeof first != "undefined" && typeof last == "undefined") {
+		current = first + " " + _this.attributes['familyName']
+	} else {
+		current = _this.attributes['currentName']
+	}
+	return current;
+}
 
 
 // This is the function that AWS Lambda calls every time Alexa uses the skill.
