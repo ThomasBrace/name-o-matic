@@ -117,7 +117,7 @@ console.log(this.attributes.savedNames)
 			let pickedNames = "";
 			let pickedIndex = "";
 
-			if (numberSlot > 10) {numberSlot = 10};
+			if (numberSlot > 20) {numberSlot = 20};
 
 			for (var i=0; i<numberSlot; i++){
 				pickedIndex = Math.floor(Math.random() * pickArry.length)
