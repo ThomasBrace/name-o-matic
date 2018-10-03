@@ -125,8 +125,10 @@ console.log(this.attributes.savedNames)
 				pickedNames = pickedNames + this.attributes['currentName'] + ", "
 				pickArry.splice(pickedIndex,1)
 			}
+			// remove last comma
+			pickedNames.slice(0, -1)
 
-			speechOutput = " How about these?: " + pickedNames;
+			speechOutput = " How about these? " + pickedNames;
 		} else {
 
 			// random pick from remaining list
